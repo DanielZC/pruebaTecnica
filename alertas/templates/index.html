@@ -1,0 +1,62 @@
+<!-- chat/templates/chat/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Alertas</title>
+</head>
+<body>
+    Mensaje de alerta?<br>
+    <input id="alerta-msj-input" type="text" size="100"><br>
+    <input id="alerta-submit" type="button" value="enviar">
+
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
+            }
+        })
+          
+        const alertaSocket = new WebSocket(
+            `ws://${window.location.host}/alerta/`
+        );
+
+        alertaSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+
+            Toast.fire({
+                icon: 'success',
+                title: data.message
+            })
+        };
+
+        alertaSocket.onclose = function(e) {
+            console.error('socket no conectado');
+        };
+
+        document.querySelector('#alerta-msj-input').focus();
+        document.querySelector('#alerta-msj-input').onkeyup = function(e) {
+            if (e.keyCode === 13) {  // enter, return
+                document.querySelector('#alerta-submit').click();
+            }
+        };
+
+        document.querySelector('#alerta-submit').onclick = function(e) {
+            var msj = document.querySelector('#alerta-msj-input').value;
+            // window.location.pathname = '/chat/' + roomName + '/';
+            alertaSocket.send(JSON.stringify({
+                'msj': msj
+            }));
+            document.querySelector('#alerta-msj-input').value = '';
+        };
+    </script>
+</body>
+</html>
